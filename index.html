@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fabric Data Agent Kostenrechner</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #10b981;
+      --accent-2: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+      --grid-gap: 20px;
+      --max-width: 1200px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.18), transparent 25%),
+        radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.2), transparent 22%),
+        radial-gradient(circle at 60% 80%, rgba(14, 165, 233, 0.18), transparent 20%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 32px 20px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      padding: 0 20px 48px;
+      margin: 0 auto;
+    }
+
+    .headline {
+      background: linear-gradient(120deg, #5eead4, #22d3ee 45%, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: clamp(28px, 4vw, 40px);
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--grid-gap);
+      margin-top: 28px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(16, 185, 129, 0.05), rgba(14, 165, 233, 0.04));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      background: rgba(34, 211, 238, 0.1);
+      color: #22d3ee;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(34, 211, 238, 0.25);
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(34, 211, 238, 0.7);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 14px;
+    }
+
+    .flex .stack {
+      flex: 1;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .stat small {
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .stat strong {
+      font-size: 20px;
+      color: #f8fafc;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .table td:last-child {
+      text-align: right;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    footer {
+      margin-top: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    @media (max-width: 768px) {
+      .flex {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="headline">Fabric Data Agent Kostenrechner</h1>
+      <p class="subtitle">Berechne Ressourcenverbrauch und Preisschätzung pro Prompt auf Basis deiner Workload-Annahmen.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <h2>Eingaben <span class="pill">Workload</span></h2>
+        <div class="stack">
+          <div class="flex">
+            <div class="stack">
+              <label for="capacity">Parallelität (gleichzeitige Prompts)</label>
+              <input id="capacity" type="number" min="1" value="6" />
+            </div>
+            <div class="stack">
+              <label for="ppm">Prompts pro Minute</label>
+              <input id="ppm" type="number" min="1" value="30" />
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="stack">
+              <label for="inputTokens">Ø Eingabetokens</label>
+              <input id="inputTokens" type="number" min="1" value="900" />
+            </div>
+            <div class="stack">
+              <label for="outputTokens">Ø Antworttokens</label>
+              <input id="outputTokens" type="number" min="1" value="750" />
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="stack">
+              <label for="retrievalKb">Retrieval Volumen (KB)</label>
+              <input id="retrievalKb" type="number" min="0" value="320" />
+            </div>
+            <div class="stack">
+              <label for="vectorLookups">Vector-Lookups pro Prompt</label>
+              <input id="vectorLookups" type="number" min="0" value="3" />
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="stack">
+              <label for="vectorKb">Indexgröße pro Lookup (KB)</label>
+              <input id="vectorKb" type="number" min="1" value="512" />
+            </div>
+            <div class="stack">
+              <label for="networkKb">Outbound Netzwerk (KB)</label>
+              <input id="networkKb" type="number" min="0" value="180" />
+            </div>
+          </div>
+
+          <div class="stack">
+            <label for="cpuPerK">CPU-Sek. je 1k Tokens <span class="badge">Effizienz</span></label>
+            <input id="cpuPerK" type="number" step="0.01" min="0.01" value="0.25" />
+          </div>
+
+          <div class="stack">
+            <label for="memoryGiB">RAM je Prompt (GiB)</label>
+            <input id="memoryGiB" type="number" step="0.1" min="0.1" value="0.6" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Kostenannahmen <span class="pill">Rates</span></h2>
+        <div class="stack">
+          <div class="flex">
+            <div class="stack">
+              <label for="cpuRate">Compute pro Sek.</label>
+              <input id="cpuRate" type="number" step="0.001" min="0" value="0.045" />
+            </div>
+            <div class="stack">
+              <label for="memoryRate">Memory pro GiB·Sek.</label>
+              <input id="memoryRate" type="number" step="0.0001" min="0" value="0.0008" />
+            </div>
+          </div>
+
+          <div class="flex">
+            <div class="stack">
+              <label for="networkRate">Netzwerk pro GiB</label>
+              <input id="networkRate" type="number" step="0.01" min="0" value="0.12" />
+            </div>
+            <div class="stack">
+              <label for="vectorRate">Vector Storage pro GiB</label>
+              <input id="vectorRate" type="number" step="0.01" min="0" value="0.08" />
+            </div>
+          </div>
+
+          <div class="note">Alle Werte lassen sich anpassen, um die eigenen Fabric-Preise oder Nutzungsprofile abzubilden.</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top: 20px;">
+      <h2>Ergebnis <span class="pill">pro Prompt & pro Minute</span></h2>
+      <div class="summary-grid" id="summary"></div>
+
+      <table class="table" aria-label="Kostenaufstellung">
+        <tbody id="costTable"></tbody>
+      </table>
+      <div class="note">Speicher- und Netzwerkkosten werden in GiB hochgerechnet. Werte basieren auf den eingegebenen Workload-Schätzungen.</div>
+    </section>
+
+    <footer>
+      Dieser Rechner ist ein Beispiel und keine offizielle Preisliste. Passe die Raten an, um deine eigenen Szenarien abzubilden.
+    </footer>
+  </main>
+
+  <script>
+    const inputs = {
+      capacity: document.getElementById("capacity"),
+      ppm: document.getElementById("ppm"),
+      inputTokens: document.getElementById("inputTokens"),
+      outputTokens: document.getElementById("outputTokens"),
+      retrievalKb: document.getElementById("retrievalKb"),
+      vectorLookups: document.getElementById("vectorLookups"),
+      vectorKb: document.getElementById("vectorKb"),
+      networkKb: document.getElementById("networkKb"),
+      cpuPerK: document.getElementById("cpuPerK"),
+      memoryGiB: document.getElementById("memoryGiB"),
+      cpuRate: document.getElementById("cpuRate"),
+      memoryRate: document.getElementById("memoryRate"),
+      networkRate: document.getElementById("networkRate"),
+      vectorRate: document.getElementById("vectorRate"),
+    };
+
+    const summaryEl = document.getElementById("summary");
+    const costTable = document.getElementById("costTable");
+
+    function toNumber(element) {
+      const value = parseFloat(element.value.replace(",", "."));
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 4 }).format(value);
+    }
+
+    function formatNumber(value, digits = 2) {
+      return new Intl.NumberFormat("de-DE", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+    }
+
+    function compute() {
+      const capacity = toNumber(inputs.capacity);
+      const promptsPerMinute = toNumber(inputs.ppm);
+      const inputTokens = toNumber(inputs.inputTokens);
+      const outputTokens = toNumber(inputs.outputTokens);
+      const retrievalKb = toNumber(inputs.retrievalKb);
+      const vectorLookups = toNumber(inputs.vectorLookups);
+      const vectorKb = toNumber(inputs.vectorKb);
+      const networkKb = toNumber(inputs.networkKb);
+      const cpuPerK = toNumber(inputs.cpuPerK);
+      const memoryGiB = toNumber(inputs.memoryGiB);
+
+      const cpuRate = toNumber(inputs.cpuRate);
+      const memoryRate = toNumber(inputs.memoryRate);
+      const networkRate = toNumber(inputs.networkRate);
+      const vectorRate = toNumber(inputs.vectorRate);
+
+      const totalTokens = inputTokens + outputTokens;
+      const cpuSeconds = (totalTokens / 1000) * cpuPerK;
+      const promptDuration = Math.max(1.2, cpuSeconds + 0.6);
+      const memoryGiBSeconds = memoryGiB * promptDuration;
+
+      const retrievalGiB = retrievalKb / 1048576;
+      const outboundGiB = networkKb / 1048576;
+      const vectorGiB = (vectorLookups * vectorKb) / 1048576;
+
+      const cpuCost = cpuSeconds * cpuRate;
+      const memoryCost = memoryGiBSeconds * memoryRate;
+      const networkCost = (retrievalGiB + outboundGiB) * networkRate;
+      const vectorCost = vectorGiB * vectorRate;
+
+      const costPerPrompt = cpuCost + memoryCost + networkCost + vectorCost;
+      const promptsPerDay = promptsPerMinute * 60 * 24;
+      const costPerMinute = costPerPrompt * promptsPerMinute;
+      const costPerDay = costPerPrompt * promptsPerDay;
+
+      const summary = [
+        { label: "Kosten pro Prompt", value: formatCurrency(costPerPrompt) },
+        { label: "Kosten pro Minute", value: formatCurrency(costPerMinute) },
+        { label: "Kosten pro Tag", value: formatCurrency(costPerDay) },
+        { label: "CPU-Sekunden / Prompt", value: `${formatNumber(cpuSeconds)} s` },
+        { label: "Memory-Budget / Prompt", value: `${formatNumber(memoryGiBSeconds)} GiB·s` },
+        { label: "Netzwerk / Prompt", value: `${formatNumber((retrievalGiB + outboundGiB) * 1024, 3)} MiB` },
+      ];
+
+      summaryEl.innerHTML = summary
+        .map(
+          (item) => `
+          <div class="stat">
+            <small>${item.label}</small>
+            <strong>${item.value}</strong>
+          </div>
+        `
+        )
+        .join("");
+
+      const rows = [
+        { label: "Compute", value: `${formatNumber(cpuSeconds)} s`, cost: cpuCost },
+        { label: "Memory", value: `${formatNumber(memoryGiBSeconds)} GiB·s`, cost: memoryCost },
+        { label: "Netzwerk (In/Out)", value: `${formatNumber(retrievalGiB + outboundGiB, 4)} GiB`, cost: networkCost },
+        { label: "Vector Storage", value: `${formatNumber(vectorGiB, 4)} GiB`, cost: vectorCost },
+      ];
+
+      costTable.innerHTML = rows
+        .map(
+          (row) => `
+          <tr>
+            <td>${row.label}</td>
+            <td>${row.value}</td>
+            <td>${formatCurrency(row.cost)}</td>
+          </tr>
+        `
+        )
+        .join("");
+    }
+
+    Object.values(inputs).forEach((input) => input.addEventListener("input", compute));
+    compute();
+  </script>
+</body>
+</html>
