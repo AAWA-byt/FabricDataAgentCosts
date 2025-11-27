@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Agent Kostenkalkulator für Microsoft Fabric</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1 class="headline">Data Agent Kostenkalkulator für Microsoft Fabric</h1>
+        <p class="subtitle">
+          Schätze Kosten pro Prompt und die Auslastung deiner Fabric-Kapazität. Dieses Tool liefert Beispielrechnungen und
+          ersetzt keinen offiziellen Kostenrechner.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="grid">
+        <section class="card">
+          <h2>Eingaben <span class="pill">Workload &amp; Kapazität</span></h2>
+          <form id="calculatorForm">
+            <div class="section-title">1) Prompt-Parameter</div>
+            <div class="form-grid">
+              <div>
+                <label for="wordsPerPrompt">Anzahl Wörter pro Prompt</label>
+                <input id="wordsPerPrompt" type="number" min="0" value="150" />
+              </div>
+              <div>
+                <label for="promptsPerDay">Anzahl Prompts pro Tag</label>
+                <input id="promptsPerDay" type="number" min="0" value="500" />
+              </div>
+              <div>
+                <label for="answerLength">Antwortlänge in Wörtern</label>
+                <input id="answerLength" type="number" min="0" value="200" />
+              </div>
+              <div>
+                <label for="promptComplexity">Prompt-Komplexität</label>
+                <select id="promptComplexity">
+                  <option value="0.8">Einfach (0,8)</option>
+                  <option value="1" selected>Mittel (1,0)</option>
+                  <option value="1.3">Komplex (1,3)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="section-title">2) Datenquelle (Lakehouse/Warehouse)</div>
+            <div class="form-grid">
+              <div>
+                <label for="tableCount">Anzahl Tabellen</label>
+                <input id="tableCount" type="number" min="0" value="20" />
+              </div>
+              <div>
+                <label for="avgRows">Ø Zeilen pro Tabelle</label>
+                <input id="avgRows" type="number" min="0" value="100000" />
+              </div>
+              <div>
+                <label for="dataVolumeGb">Geschätztes Datenvolumen (GB)</label>
+                <input id="dataVolumeGb" type="number" min="0" value="50" />
+              </div>
+              <div>
+                <label for="dataComplexity">Datenkomplexität</label>
+                <select id="dataComplexity">
+                  <option value="0.8">klein (0,8)</option>
+                  <option value="1" selected>mittel (1,0)</option>
+                  <option value="1.3">groß (1,3)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="section-title">3) Fabric-Kapazität &amp; Preis</div>
+            <div class="form-grid">
+              <div>
+                <label for="fabricSku">Fabric SKU</label>
+                <select id="fabricSku">
+                  <option>F2</option>
+                  <option>F4</option>
+                  <option>F8</option>
+                  <option>F16</option>
+                  <option>F32</option>
+                  <option selected>F64</option>
+                  <option>F128</option>
+                  <option>F256</option>
+                  <option>F512</option>
+                  <option>F1024</option>
+                  <option>F2048</option>
+                </select>
+              </div>
+              <div>
+                <label for="pricePerCuHour">Preis pro CU-Stunde (€)</label>
+                <input id="pricePerCuHour" type="number" step="0.01" min="0" value="0.2" />
+              </div>
+              <div>
+                <label for="regionFactor">Region-Faktor</label>
+                <input id="regionFactor" type="number" step="0.01" min="0" value="1.0" />
+              </div>
+              <div>
+                <label for="cuSecondsPerThousandWords">CU-Sek. pro 1.000 Prompt-Wörter</label>
+                <input id="cuSecondsPerThousandWords" type="number" step="0.01" min="0" value="10" />
+              </div>
+            </div>
+
+            <details class="details">
+              <summary class="section-title">4) Erweiterte Einstellungen</summary>
+              <div class="form-grid">
+                <div>
+                  <label for="cuSecondsPerTable">Zusätzliche CU-Sek. pro Tabelle</label>
+                  <input id="cuSecondsPerTable" type="number" step="0.1" min="0" value="2" />
+                </div>
+                <div>
+                  <label for="cuSecondsPerGb">Zusätzliche CU-Sek. pro GB</label>
+                  <input id="cuSecondsPerGb" type="number" step="0.1" min="0" value="0.5" />
+                </div>
+              </div>
+            </details>
+
+            <div class="actions">
+              <button id="calculateBtn" type="button" class="primary">Berechnen</button>
+              <button id="resetBtn" type="button" class="secondary">Zurücksetzen</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Ergebnisse <span class="pill">Kosten &amp; Auslastung</span></h2>
+          <div class="summary-grid" id="summary" aria-live="polite"></div>
+          <div id="utilization" class="utilization badge-low" aria-live="polite"></div>
+
+          <table class="table" aria-label="Berechnungsdetails">
+            <tbody id="costTable"></tbody>
+          </table>
+
+          <p class="summary-text" id="summaryText"></p>
+          <p class="note">
+            Hinweis: 1 CU ≈ 2 Spark vCores (Faustregel). Region-Faktor erlaubt eine grobe Anpassung an regionale Preise.
+            Die Multiplikatoren basieren auf dem Reddit-Thread zum CU-Verbrauch und dienen nur zur Orientierung.
+          </p>
+        </section>
+      </div>
+
+      <footer>
+        Dieses Tool liefert lediglich Schätzwerte und ersetzt keine offiziellen Microsoft-Fabric-Preisinformationen. Die
+        Modellparameter sind Beispielwerte und sollten durch echte Messungen (z. B. Fabric Capacity Metrics App oder
+        Azure-Portal) ersetzt werden, wenn verfügbar.
+      </footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
